@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚡ Electrical Lab Simulator</title>
+    <style>
+        /* ────────── RESET & BASE ────────── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0b0e14;
+            color: #e8edf5;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1f2a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a4a6a;
+            border-radius: 4px;
+        }
+
+        /* ────────── SIDEBAR ────────── */
+        #sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: #121821;
+            border-right: 1px solid #293241;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px 0 20px 0;
+            z-index: 10;
+        }
+        #sidebar .logo {
+            padding: 0 18px 18px 18px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #293241;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #7bb8ff;
+        }
+        #sidebar .logo span {
+            font-size: 26px;
+        }
+        .nav-item {
+            padding: 10px 18px;
+            margin: 2px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            color: #9aaec9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover {
+            background: #1e283a;
+            color: #d0def0;
+        }
+        .nav-item.active {
+            background: #1a2a44;
+            color: #7bb8ff;
+            border-left-color: #4a8cf7;
+        }
+        .nav-item .badge {
+            margin-left: auto;
+            font-size: 10px;
+            background: #1f2a3a;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: #7a8aa8;
+        }
+        .nav-item.active .badge {
+            background: #2a3f66;
+            color: #7bb8ff;
+        }
+        .nav-section {
+            padding: 14px 18px 6px 18px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4a5a7a;
+            font-weight: 600;
+        }
+
+        /* ────────── MAIN CONTENT ────────── */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f151e;
+            overflow: hidden;
+        }
+        #toolbar {
+            background: #141c28;
+            padding: 10px 24px;
+            border-bottom: 1px solid #1f2a38;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 56px;
+            flex-shrink: 0;
+        }
+        #toolbar h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #d0def0;
+        }
+        #toolbar .exp-sub {
+            font-size: 13px;
+            color: #6a8aaa;
+            font-weight: 400;
+            margin-left: 12px;
+        }
+        #toolbar .actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        #toolbar .actions button {
+            background: #1f2a3a;
+            border: none;
+            color: #b0c8e0;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-weight: 500;
+        }
+        #toolbar .actions button:hover {
+            background: #2a3a55;
+            color: #fff;
+        }
+        #toolbar .actions button.primary {
+            background: #2a4a7a;
+            color: #fff;
+        }
+        #toolbar .actions button.primary:hover {
+            background: #3a5a9a;
+        }
+
+        #workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background: #0d121c;
+            overflow: auto;
+        }
+        #canvas-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* ────────── RIGHT PANEL (controls + meters) ────────── */
+        #right-panel {
+            width: 340px;
+            min-width: 340px;
+            background: #111822;
+            border-left: 1px solid #1f2a38;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px 18px;
+            gap: 14px;
+        }
+        #right-panel .panel-section {
+            background: #161f2b;
+            border-radius: 10px;
+            padding: 14px 16px;
+            border: 1px solid #1f2a3a;
+        }
+        #right-panel .panel-section h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #5a7a9a;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #b0c8e0;
+            flex-wrap: wrap;
+        }
+        .param-row label {
+            min-width: 70px;
+            font-weight: 500;
+            color: #8aa8c8;
+        }
+        .param-row input[type="range"] {
+            flex: 1;
+            min-width: 80px;
+            accent-color: #4a8cf7;
+            background: #1a2535;
+            height: 4px;
+            border-radius: 4px;
+        }
+        .param-row input[type="number"] {
+            width: 64px;
+            background: #0d1520;
+            border: 1px solid #1f2a3a;
+            border-radius: 4px;
+            color: #e8edf5;
+            padding: 3px 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .param-row .value-display {
+            min-width: 44px;
+            text-align: right;
+            font-weight: 600;
+            color: #c0d8f0;
+            font-size: 14px;
+        }
+        .meter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .meter-item {
+            background: #0d1520;
+            border-radius: 6px;
+            padding: 8px 10px;
+            text-align: center;
+            border: 1px solid #1a2535;
+        }
+        .meter-item .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #5a7a9a;
+            letter-spacing: 0.5px;
+        }
+        .meter-item .value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #7bb8ff;
+            font-family: 'Courier New', monospace;
+        }
+        .meter-item .unit {
+            font-size: 12px;
+            color: #6a8aaa;
+            margin-left: 2px;
+        }
+        .meter-item.accent-green .value {
+            color: #5cdb9a;
+        }
+        .meter-item.accent-orange .value {
+            color: #f0b86a;
+        }
+        .meter-item.accent-pink .value {
+            color: #e880a0;
+        }
+
+        .status-msg {
+            font-size: 13px;
+            color: #8ab8d8;
+            padding: 6px 10px;
+            background: #0a121e;
+            border-radius: 6px;
+            border-left: 3px solid #4a8cf7;
+        }
+
+        /* ────────── OSCILLOSCOPE (DSO) ────────── */
+        .dso-container {
+            background: #080e18;
+            border-radius: 8px;
+            padding: 8px;
+            border: 1px solid #1a2535;
+        }
+        .dso-container canvas {
+            width: 100%;
+            height: 140px;
+            display: block;
+            border-radius: 4px;
+            background: #050a12;
+        }
+        .dso-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #4a6a8a;
+            padding: 2px 6px 0 6px;
+        }
+        .dso-meas {
+            display: flex;
+            gap: 14px;
+            font-size: 12px;
+            color: #8aaac8;
+            padding: 4px 6px 0 6px;
+            flex-wrap: wrap;
+        }
+        .dso-meas span {
+            background: #0a121e;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ────────── RESPONSIVE ────────── */
+        @media (max-width: 1024px) {
+            #right-panel {
+                width: 280px;
+                min-width: 280px;
+            }
+            #sidebar {
+                width: 200px;
+                min-width: 200px;
+            }
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                min-width: unset;
+                max-height: 200px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 8px 12px;
+                border-right: none;
+                border-bottom: 1px solid #1f2a38;
+                overflow-y: auto;
+                gap: 4px;
+            }
+            #sidebar .logo {
+                width: 100%;
+                padding: 0 0 8px 0;
+                border-bottom: none;
+            }
+            .nav-item {
+                padding: 6px 12px;
+                font-size: 12px;
+                margin: 0;
+            }
+            #right-panel {
+                width: 100%;
+                min-width: unset;
+                max-height: 50vh;
+                border-left: none;
+                border-top: 1px solid #1f2a38;
+            }
+            #workspace {
+                flex-direction: column;
+            }
+            #toolbar h2 {
+                font-size: 14px;
+            }
+            .meter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* ────────── TOOLTIP / HINT ────────── */
+        .hint {
+            font-size: 12px;
+            color: #4a6a8a;
+            padding: 4px 0;
+            font-style: italic;
+        }
+        .connection-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #0a1520;
+            color: #6a9ac8;
+            border: 1px solid #1a2a40;
+        }
+        .connection-status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .dot.green {
+            background: #4cdb8a;
+        }
+        .dot.red {
+            background: #db4a4a;
+        }
+        .dot.yellow {
+            background: #dbca4a;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <div id="sidebar">
+        <div class="logo"><span>⚡</span> Lab<span style="color:#4a8cf7;">Sim</span></div>
+        <div class="nav-section">Experiments</div>
+        <div id="nav-list"></div>
+        <div style="margin-top:auto;padding:12px 18px;font-size:11px;color:#3a4a5a;border-top:1px solid #1a2535;">
+            🔌 Click terminals to join wires
+        </div>
+    </div>
+
+    <!-- ═══════════════ MAIN ═══════════════ -->
+    <div id="main">
+        <div id="toolbar">
+            <div>
+                <h2 id="exp-title">Maximum Power Transfer <span class="exp-sub">Experiment 1</span></h2>
+            </div>
+            <div class="actions">
+                <button id="btn-reset" title="Reset circuit">⟳ Reset</button>
+                <button id="btn-simulate" class="primary">▶ Simulate</button>
+            </div>
+        </div>
+
+        <div id="workspace">
+            <div id="canvas-container">
+                <canvas id="circuitCanvas"></canvas>
+            </div>
+            <div id="right-panel">
+                <!-- dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        //  DATA: All 10 Experiments
+        // ═══════════════════════════════════════════════════════════════
+
+        const EXPERIMENTS = [{
+            id: 0,
+            title: 'Maximum Power Transfer Theorem',
+            short: 'Max Power Transfer',
+            desc: 'Verify that maximum power is delivered to the load when R<sub>L</sub> = R<sub>th</sub>.',
+            params: [
+                { key: 'Vs', label: 'V<sub>s</sub>', min: 1, max: 20, step: 0.5, default: 10, unit: 'V' },
+                { key: 'Rs', label: 'R<sub>s</sub>', min: 10, max: 200, step: 5, default: 100, unit: 'Ω' },
+                { key: 'Rl', label: 'R<sub>L</sub>', min: 5, max: 300, step: 5, default: 50, unit: 'Ω' },
+            ],
+            meters: [
+                { key: 'Vload', label: 'V<sub>L</sub>', unit: 'V', accent: '' },
+                { key: 'Iload', label: 'I<sub>L</sub>', unit: 'mA', accent: 'accent-green' },
+                { key: 'Pload', label: 'P<sub>L</sub>', unit: 'mW', accent: 'accent-orange' },
+                { key: 'eff', label: 'η', unit: '%', accent: 'accent-pink' },
+            ],
+            status: 'Adjust R<sub>L</sub> to find max power point.',
+            // circuit drawing function
+            draw: drawMaxPower,
+            simulate: simMaxPower,
+        }, {
+            id: 1,
+            title: "Thevenin's Theorem",
+            short: 'Thevenin',
+            desc: 'Verify Thevenin equivalent: V<sub>th</sub> and R<sub>th</sub> of a network.',
+            params: [
+                { key: 'Vs', label: 'V<sub>s</sub>', min: 5, max: 30, step: 1, default: 15, unit: 'V' },
+                { key: 'R1', label: 'R<sub>1</sub>', min: 10, max: 300, step: 5, default: 100, unit: 'Ω' },
+                { key: 'R2', label: 'R<sub>2</sub>', min: 10, max: 300, step: 5, default: 150, unit: 'Ω' },
+                { key: 'Rl', label: 'R<sub>L</sub>', min: 5, max: 300, step: 5, default: 100, unit: 'Ω' },
+            ],
+            meters: [
+                { key: 'Vth', label: 'V<sub>th</sub>', unit: 'V', accent: '' },
+                { key: 'Rth', label: 'R<sub>th</sub>', unit: 'Ω', accent: 'accent-green' },
+                { key: 'Vload', label: 'V<sub>L</sub>', unit: 'V', accent: 'accent-orange' },
+                { key: 'Iload', label: 'I<sub>L</sub>', unit: 'mA', accent: 'accent-pink' },
+            ],
+            status: 'Thevenin equivalent simplifies the network.',
+            draw: drawThevenin,
+            simulate: simThevenin,
+        }, {
+            id: 2,
+            title: '3-Voltmeter Method (AC)',
+            short: '3VM AC',
+            desc: 'Measure power & power factor in single-phase AC using three voltmeters.',
+            params: [
+                { key: 'V', label: 'V<sub>s</sub>', min: 50, max: 300, step: 5, default: 220, unit: 'V' },
+                { key: 'R', label: 'R', min: 10, max: 500, step: 5, default: 100, unit: 'Ω' },
+                { key: 'L', label: 'L', min: 10, max: 500, step: 10, default: 200, unit: 'mH' },
+                { key: 'C', label: 'C', min: 1, max: 100, step: 1, default: 30, unit: 'µF' },
+            ],
+            meters: [
+                { key: 'V1', label: 'V<sub>1</sub> (R)', unit: 'V', accent: '' },
+                { key: 'V2', label: 'V<sub>2</sub> (L)', unit: 'V', accent: 'accent-green' },
+                { key: 'V3', label: 'V<sub>3</sub> (C)', unit: 'V', accent: 'accent-orange' },
+                { key: 'PF', label: 'Power Factor', unit: '', accent: 'accent-pink' },
+            ],
+            status: 'Use three voltmeters to compute power and PF.',
+            draw: drawThreeVoltmeter,
+            simulate: simThreeVoltmeter,
+        }, {
+            id: 3,
+            title: '3-Phase Star / Delta',
+            short: 'Star-Delta',
+            desc: 'Verify line/phase voltage & current relations in 3-phase star and delta.',
+            params: [
+                { key: 'Vl', label: 'V<sub>line</sub>', min: 100, max: 500, step: 10, default: 400, unit: 'V' },
+                { key: 'Z', label: 'Z<sub>phase</sub>', min: 10, max: 300, step: 5, default: 100, unit: 'Ω' },
+                { key: 'mode', label: 'Connection', type: 'select', options: ['Star', 'Delta'], default: 'Star' },
+            ],
+            meters: [
+                { key: 'Vp', label: 'V<sub>phase</sub>', unit: 'V', accent: '' },
+                { key: 'Ip', label: 'I<sub>phase</sub>', unit: 'A', accent: 'accent-green' },
+                { key: 'Il', label: 'I<sub>line</sub>', unit: 'A', accent: 'accent-orange' },
+                { key: 'S', label: 'S (apparent)', unit: 'VA', accent: 'accent-pink' },
+            ],
+            status: 'Star: V<sub>L</sub> = √3·V<sub>P</sub>, I<sub>L</sub> = I<sub>P</sub>  |  Delta: V<sub>L</sub> = V<sub>P</sub>, I<sub>L</sub> = √3·I<sub>P</sub>',
+            draw: drawStarDelta,
+            simulate: simStarDelta,
+        }, {
+            id: 4,
+            title: 'R-L-C Series Resonance',
+            short: 'RLC Resonance',
+            desc: 'Study series RLC circuit and find resonance condition (X<sub>L</sub> = X<sub>C</sub>).',
+            params: [
+                { key: 'Vs', label: 'V<sub>s</sub>', min: 5, max: 50, step: 1, default: 20, unit: 'V' },
+                { key: 'R', label: 'R', min: 10, max: 300, step: 5, default: 50, unit: 'Ω' },
+                { key: 'L', label: 'L', min: 10, max: 500, step: 10, default: 100, unit: 'mH' },
+                { key: 'C', label: 'C', min: 1, max: 100, step: 1, default: 20, unit: 'µF' },
+                { key: 'f', label: 'f', min: 10, max: 2000, step: 10, default: 500, unit: 'Hz' },
+            ],
+            meters: [
+                { key: 'XL', label: 'X<sub>L</sub>', unit: 'Ω', accent: '' },
+                { key: 'XC', label: 'X<sub>C</sub>', unit: 'Ω', accent: 'accent-green' },
+                { key: 'Z', label: '|Z|', unit: 'Ω', accent: 'accent-orange' },
+                { key: 'I', label: 'I', unit: 'mA', accent: 'accent-pink' },
+                { key: 'f0', label: 'f<sub>0</sub>', unit: 'Hz', accent: '' },
+            ],
+            status: 'Resonance when X<sub>L</sub> = X<sub>C</sub> → f<sub>0</sub> = 1/(2π√LC)',
+            draw: drawRLC,
+            simulate: simRLC,
+        }, {
+            id: 5,
+            title: 'Staircase Wiring (2-Way)',
+            short: 'Staircase',
+            desc: 'Control one lamp from two different places using 2-way switches.',
+            params: [
+                { key: 'sw1', label: 'Switch 1', type: 'toggle', default: 'up' },
+                { key: 'sw2', label: 'Switch 2', type: 'toggle', default: 'up' },
+            ],
+            meters: [
+                { key: 'lamp', label: 'Lamp', unit: '', accent: '' },
+                { key: 'state', label: 'State', unit: '', accent: 'accent-orange' },
+            ],
+            status: 'Toggle either switch to change lamp state.',
+            draw: drawStaircase,
+            simulate: simStaircase,
+        }, {
+            id: 6,
+            title: 'Bed Switch Wiring (1-Way)',
+            short: 'Bed Switch',
+            desc: 'Control one lamp from two places using 1-way switches (SPST).',
+            params: [
+                { key: 'sw1', label: 'Switch 1', type: 'toggle', default: 'off' },
+                { key: 'sw2', label: 'Switch 2', type: 'toggle', default: 'off' },
+            ],
+            meters: [
+                { key: 'lamp', label: 'Lamp', unit: '', accent: '' },
+                { key: 'state', label: 'State', unit: '', accent: 'accent-orange' },
+            ],
+            status: 'Both switches must be ON for lamp to glow.',
+            draw: drawBedSwitch,
+            simulate: simBedSwitch,
+        }, {
+            id: 7,
+            title: 'Two-Wattmeter Method (3-Phase)',
+            short: '2-Wattmeter',
+            desc: 'Measure 3-phase power using two wattmeters (balanced load).',
+            params: [
+                { key: 'Vl', label: 'V<sub>line</sub>', min: 100, max: 500, step: 10, default: 415, unit: 'V' },
+                { key: 'Z', label: 'Z<sub>phase</sub>', min: 10, max: 300, step: 5, default: 100, unit: 'Ω' },
+                { key: 'pf', label: 'PF (cos φ)', min: 0.1, max: 1, step: 0.05, default: 0.8, unit: '' },
+            ],
+            meters: [
+                { key: 'W1', label: 'W<sub>1</sub>', unit: 'W', accent: '' },
+                { key: 'W2', label: 'W<sub>2</sub>', unit: 'W', accent: 'accent-green' },
+                { key: 'Pt', label: 'P<sub>total</sub>', unit: 'W', accent: 'accent-orange' },
+                { key: 'PF', label: 'PF', unit: '', accent: 'accent-pink' },
+            ],
+            status: 'P<sub>total</sub> = W<sub>1</sub> + W<sub>2</sub>  (for balanced load)',
+            draw: drawTwoWattmeter,
+            simulate: simTwoWattmeter,
+        }, {
+            id: 8,
+            title: 'DSO – Waveform Analysis',
+            short: 'DSO',
+            desc: 'Measure peak/rms, frequency, phase difference using Digital Storage Oscilloscope.',
+            params: [
+                { key: 'freq', label: 'Frequency', min: 10, max: 1000, step: 10, default: 100, unit: 'Hz' },
+                { key: 'amp', label: 'Amplitude', min: 1, max: 20, step: 0.5, default: 10, unit: 'V' },
+                { key: 'phase', label: 'Phase shift', min: 0, max: 360, step: 5, default: 45, unit: '°' },
+                { key: 'wave', label: 'Waveform', type: 'select', options: ['Sine', 'Square', 'Triangle'],
+                default: 'Sine' },
+            ],
+            meters: [
+                { key: 'Vpp', label: 'V<sub>pp</sub>', unit: 'V', accent: '' },
+                { key: 'Vrms', label: 'V<sub>rms</sub>', unit: 'V', accent: 'accent-green' },
+                { key: 'freq_m', label: 'f (measured)', unit: 'Hz', accent: 'accent-orange' },
+                { key: 'phase_m', label: 'φ (measured)', unit: '°', accent: 'accent-pink' },
+            ],
+            status: 'Observe waveforms and measure key parameters.',
+            draw: drawDSO,
+            simulate: simDSO,
+        }, {
+            id: 9,
+            title: 'Electric Field: Parallel Plates',
+            short: 'E-Field Plates',
+            desc: 'Simulate electric field distribution between parallel plates.',
+            params: [
+                { key: 'V', label: 'Voltage', min: 10, max: 500, step: 10, default: 100, unit: 'V' },
+                { key: 'd', label: 'Plate gap', min: 1, max: 10, step: 0.5, default: 5, unit: 'cm' },
+            ],
+            meters: [
+                { key: 'E', label: 'E (uniform)', unit: 'V/m', accent: '' },
+                { key: 'Vgrad', label: 'Gradient', unit: 'V/m', accent: 'accent-green' },
+            ],
+            status: 'Uniform field between infinite parallel plates: E = V/d',
+            draw: drawEField,
+            simulate: simEField,
+        }, {
+            id: 10,
+            title: 'Magnetic Field: Current Wire',
+            short: 'B-Field Wire',
+            desc: 'Simulate magnetic field around a current-carrying wire (Biot–Savart).',
+            params: [
+                { key: 'I', label: 'Current', min: 0.5, max: 20, step: 0.5, default: 5, unit: 'A' },
+                { key: 'r', label: 'Distance', min: 0.5, max: 10, step: 0.5, default: 2, unit: 'cm' },
+            ],
+            meters: [
+                { key: 'B', label: 'B (at r)', unit: 'µT', accent: '' },
+                { key: 'B0', label: 'B (surface)', unit: 'µT', accent: 'accent-green' },
+            ],
+            status: 'B = μ₀I/(2πr)  for long straight wire.',
+            draw: drawBField,
+            simulate: simBField,
+        }, ];
+
+        // ──────────────────────────────────────────────────────────────
+        //  STATE
+        // ──────────────────────────────────────────────────────────────
+
+        let currentExp = 0;
+        let params = {};
+        let canvas, ctx;
+        let W, H;
+        let mouseX = 0,
+            mouseY = 0;
+        let animFrame = null;
+
+        // Wire-joining state: user clicks on terminals
+        let terminals = []; // {x,y,label,connected}
+        let wires = []; // {from,to}
+        let selectedTerminal = null;
+
+        // ──────────────────────────────────────────────────────────────
+        //  INIT
+        // ──────────────────────────────────────────────────────────────
+
+        function init() {
+            canvas = document.getElementById('circuitCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', () => { resizeCanvas();
+                render(); });
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+                render();
+            });
+            canvas.addEventListener('click', handleCanvasClick);
+
+            buildNav();
+            loadExperiment(0);
+
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                loadExperiment(currentExp);
+            });
+            document.getElementById('btn-simulate').addEventListener('click', () => {
+                runSimulation();
+            });
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            const rect = container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            W = canvas.width;
+            H = canvas.height;
+            ctx.scale(1, 1);
+            render();
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  NAVIGATION
+        // ──────────────────────────────────────────────────────────────
+
+        function buildNav() {
+            const list = document.getElementById('nav-list');
+            list.innerHTML = '';
+            EXPERIMENTS.forEach((exp, i) => {
+                const div = document.createElement('div');
+                div.className = 'nav-item' + (i === currentExp ? ' active' : '');
+                div.innerHTML =
+                    `<span>${i+1}.</span> ${exp.short} <span class="badge">${i+1}</span>`;
+                div.dataset.idx = i;
+                div.addEventListener('click', () => {
+                    loadExperiment(i);
+                });
+                list.appendChild(div);
+            });
+        }
+
+        function loadExperiment(idx) {
+            currentExp = idx;
+            const exp = EXPERIMENTS[idx];
+            // update nav
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
+            });
+            document.getElementById('exp-title').innerHTML =
+                `${exp.title} <span class="exp-sub">Experiment ${idx+1}</span>`;
+
+            // init params with defaults
+            const p = {};
+            exp.params.forEach(pr => {
+                if (pr.type === 'toggle') {
+                    p[pr.key] = pr.default;
+                } else if (pr.type === 'select') {
+                    p[pr.key] = pr.default;
+                } else {
+                    p[pr.key] = pr.default;
+                }
+            });
+            params = p;
+
+            // build right panel
+            buildRightPanel(exp);
+
+            // reset wires & terminals
+            terminals = [];
+            wires = [];
+            selectedTerminal = null;
+
+            // run initial simulation
+            runSimulation();
+            render();
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  RIGHT PANEL
+        // ──────────────────────────────────────────────────────────────
+
+        function buildRightPanel(exp) {
+            const panel = document.getElementById('right-panel');
+            panel.innerHTML = '';
+
+            // ── Description ──
+            const descDiv = document.createElement('div');
+            descDiv.className = 'panel-section';
+            descDiv.innerHTML = `<h4>📖 Description</h4><div style="font-size:13px;color:#b0c8e0;">${exp.desc}</div>`;
+            panel.appendChild(descDiv);
+
+            // ── Parameters ──
+            const paramDiv = document.createElement('div');
+            paramDiv.className = 'panel-section';
+            let paramHTML = `<h4>⚙️ Controls</h4>`;
+            exp.params.forEach(pr => {
+                if (pr.type === 'toggle') {
+                    const val = params[pr.key] || 'up';
+                    paramHTML += `
+                        <div class="param-row">
+                            <label>${pr.label}</label>
+                            <button data-key="${pr.key}" class="toggle-btn" style="background:#1a2535;border:1px solid #2a3a55;border-radius:6px;padding:4px 14px;color:#b0c8e0;cursor:pointer;font-weight:600;">
+                                ${val === 'up' ? '▲ UP' : '▼ DOWN'}
+                            </button>
+                        </div>
+                    `;
+                } else if (pr.type === 'select') {
+                    const val = params[pr.key] || pr.options[0];
+                    let opts = pr.options.map(o =>
+                        `<option value="${o}" ${o===val?'selected':''}>${o}</option>`
+                    ).join('');
+                    paramHTML += `
+                        <div class="param-row">
+                            <label>${pr.label}</label>
+                            <select data-key="${pr.key}" style="background:#0d1520;border:1px solid #1f2a3a;border-radius:4px;color:#e8edf5;padding:3px 8px;flex:1;">
+                                ${opts}
+                            </select>
+                        </div>
+                    `;
+                } else {
+                    const val = params[pr.key] !== undefined ? params[pr.key] : pr.default;
+                    paramHTML += `
+                        <div class="param-row">
+                            <label>${pr.label}</label>
+                            <input type="range" data-key="${pr.key}" min="${pr.min}" max="${pr.max}" step="${pr.step}" value="${val}">
+                            <input type="number" data-key="${pr.key}" min="${pr.min}" max="${pr.max}" step="${pr.step}" value="${val}" style="width:58px;">
+                            <span class="value-display">${val}</span>
+                            <span style="font-size:11px;color:#4a6a8a;min-width:20px;">${pr.unit}</span>
+                        </div>
+                    `;
+                }
+            });
+            paramDiv.innerHTML = paramHTML;
+            panel.appendChild(paramDiv);
+
+            // ── Meters ──
+            const meterDiv = document.createElement('div');
+            meterDiv.className = 'panel-section';
+            let meterHTML = `<h4>📊 Measurements</h4><div class="meter-grid">`;
+            exp.meters.forEach(m => {
+                meterHTML += `
+                    <div class="meter-item ${m.accent||''}">
+                        <div class="label">${m.label}</div>
+                        <div class="value" id="meter-${m.key}">—</div>
+                        <div class="unit">${m.unit}</div>
+                    </div>
+                `;
+            });
+            meterHTML += `</div>`;
+            meterDiv.innerHTML = meterHTML;
+            panel.appendChild(meterDiv);
+
+            // ── Status ──
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'panel-section';
+            statusDiv.innerHTML = `
+                <h4>📌 Status</h4>
+                <div class="status-msg" id="status-msg">${exp.status}</div>
+                <div class="hint" id="wire-hint">🔌 Click a terminal, then click another to join.</div>
+            `;
+            panel.appendChild(statusDiv);
+
+            // ── Event listeners ──
+            paramDiv.querySelectorAll('input[type="range"]').forEach(el => {
+                el.addEventListener('input', () => {
+                    const key = el.dataset.key;
+                    const val = parseFloat(el.value);
+                    params[key] = val;
+                    const numInput = paramDiv.querySelector(`input[type="number"][data-key="${key}"]`);
+                    if (numInput) numInput.value = val;
+                    const display = paramDiv.querySelector(`.value-display[data-key="${key}"]`) ||
+                        el.closest('.param-row').querySelector('.value-display');
+                    if (display) display.textContent = val;
+                    runSimulation();
+                    render();
+                });
+            });
+            paramDiv.querySelectorAll('input[type="number"]').forEach(el => {
+                el.addEventListener('change', () => {
+                    const key = el.dataset.key;
+                    const val = parseFloat(el.value);
+                    if (!isNaN(val)) {
+                        params[key] = val;
+                        const range = paramDiv.querySelector(`input[type="range"][data-key="${key}"]`);
+                        if (range) range.value = val;
+                        const display = paramDiv.querySelector(`.value-display[data-key="${key}"]`) ||
+                            el.closest('.param-row').querySelector('.value-display');
+                        if (display) display.textContent = val;
+                        runSimulation();
+                        render();
+                    }
+                });
+            });
+            paramDiv.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.dataset.key;
+                    const current = params[key] || 'up';
+                    params[key] = current === 'up' ? 'down' : 'up';
+                    btn.textContent = params[key] === 'up' ? '▲ UP' : '▼ DOWN';
+                    runSimulation();
+                    render();
+                });
+            });
+            paramDiv.querySelectorAll('select').forEach(el => {
+                el.addEventListener('change', () => {
+                    const key = el.dataset.key;
+                    params[key] = el.value;
+                    runSimulation();
+                    render();
+                });
+            });
+
+            // update meter values after sim
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  SIMULATION RUNNER
+        // ──────────────────────────────────────────────────────────────
+
+        function runSimulation() {
+            const exp = EXPERIMENTS[currentExp];
+            if (exp.simulate) {
+                const results = exp.simulate(params, wires, terminals);
+                if (results) {
+                    Object.keys(results).forEach(key => {
+                        const el = document.getElementById(`meter-${key}`);
+                        if (el) {
+                            let val = results[key];
+                            if (typeof val === 'number') {
+                                if (Number.isInteger(val)) val = val.toFixed(0);
+                                else val = val.toFixed(2);
+                            }
+                            el.textContent = val;
+                        }
+                    });
+                    // update status
+                    const statusEl = document.getElementById('status-msg');
+                    if (results.status && statusEl) {
+                        statusEl.innerHTML = results.status;
+                    }
+                }
+            }
+            render();
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  CANVAS RENDER
+        // ──────────────────────────────────────────────────────────────
+
+        function render() {
+            const exp = EXPERIMENTS[currentExp];
+            ctx.clearRect(0, 0, W, H);
+
+            // dark grid
+            ctx.strokeStyle = '#141e2a';
+            ctx.lineWidth = 0.5;
+            const step = 40;
+            for (let x = step; x < W; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, H);
+                ctx.stroke();
+            }
+            for (let y = step; y < H; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(W, y);
+                ctx.stroke();
+            }
+
+            if (exp.draw) {
+                exp.draw(ctx, W, H, params, terminals, wires, selectedTerminal);
+            }
+
+            // draw wires on top
+            drawWires(ctx);
+
+            // draw terminal labels
+            terminals.forEach((t, i) => {
+                const isSelected = selectedTerminal === i;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, isSelected ? 10 : 7, 0, Math.PI * 2);
+                ctx.fillStyle = t.connected ? '#4cdb8a' : isSelected ? '#f0d060' : '#4a7aaa';
+                ctx.fill();
+                ctx.strokeStyle = t.connected ? '#2a9a5a' : isSelected ? '#c0a030' : '#2a4a6a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = '#8ab0d0';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(t.label || `T${i}`, t.x, t.y - 16);
+            });
+        }
+
+        function drawWires(ctx) {
+            wires.forEach(w => {
+                const from = terminals[w.from];
+                const to = terminals[w.to];
+                if (!from || !to) return;
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
+                ctx.strokeStyle = '#5cdb9a';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = '#4cdb8a40';
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                // small dots at ends
+                ctx.beginPath();
+                ctx.arc(from.x, from.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#5cdb9a';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(to.x, to.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  CANVAS CLICK (wire joining)
+        // ──────────────────────────────────────────────────────────────
+
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const cx = (e.clientX - rect.left) * scaleX;
+            const cy = (e.clientY - rect.top) * scaleY;
+
+            // find nearest terminal
+            let nearest = -1;
+            let minDist = 30;
+            terminals.forEach((t, i) => {
+                const d = Math.hypot(cx - t.x, cy - t.y);
+                if (d < minDist) {
+                    minDist = d;
+                    nearest = i;
+                }
+            });
+
+            if (nearest === -1) {
+                // click on empty space: deselect
+                selectedTerminal = null;
+                render();
+                return;
+            }
+
+            if (selectedTerminal === null) {
+                selectedTerminal = nearest;
+                render();
+                return;
+            }
+
+            if (selectedTerminal === nearest) {
+                // same terminal: toggle connection? no, just deselect
+                selectedTerminal = null;
+                render();
+                return;
+            }
+
+            // connect two terminals
+            const t1 = terminals[selectedTerminal];
+            const t2 = terminals[nearest];
+            if (t1 && t2) {
+                // check if wire already exists
+                const exists = wires.some(w =>
+                    (w.from === selectedTerminal && w.to === nearest) ||
+                    (w.from === nearest && w.to === selectedTerminal)
+                );
+                if (!exists) {
+                    wires.push({ from: selectedTerminal, to: nearest });
+                    t1.connected = true;
+                    t2.connected = true;
+                    // re-run sim
+                    runSimulation();
+                } else {
+                    // remove wire
+                    wires = wires.filter(w =>
+                        !(w.from === selectedTerminal && w.to === nearest) &&
+                        !(w.from === nearest && w.to === selectedTerminal)
+                    );
+                    // check if terminals still have any connection
+                    const stillConnected = wires.some(w =>
+                        w.from === selectedTerminal || w.to === selectedTerminal
+                    );
+                    if (!stillConnected) t1.connected = false;
+                    const stillConnected2 = wires.some(w =>
+                        w.from === nearest || w.to === nearest
+                    );
+                    if (!stillConnected2) t2.connected = false;
+                    runSimulation();
+                }
+                selectedTerminal = null;
+                render();
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  EXPERIMENT DRAWING & SIMULATION FUNCTIONS
+        // ──────────────────────────────────────────────────────────────
+
+        // ── Helper: add terminal ──
+        function addTerminal(x, y, label) {
+            terminals.push({ x, y, label, connected: false });
+            return terminals.length - 1;
+        }
+
+        // ── 1. Max Power Transfer ──
+        function drawMaxPower(ctx, W, H, p, terms, wires, sel) {
+            const cx = W / 2,
+                cy = H / 2;
+            const r = Math.min(W, H) * 0.3;
+            // source
+            drawSource(ctx, cx - r * 0.7, cy, 30, p.Vs || 10);
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Vₛ', cx - r * 0.7, cy - 40);
+
+            // resistor Rs
+            drawResistor(ctx, cx - r * 0.25, cy - 20, 50, 16, 'Rₛ', '#6a8aaa');
+            // resistor RL
+            drawResistor(ctx, cx + r * 0.25, cy - 20, 50, 16, 'Rₗ', '#f0b86a');
+
+            // terminals
+            const t1 = addTerminal(cx - r * 0.7, cy + 40, 'A');
+            const t2 = addTerminal(cx - r * 0.15, cy + 40, 'B');
+            const t3 = addTerminal(cx + r * 0.15, cy + 40, 'C');
+            const t4 = addTerminal(cx + r * 0.7, cy + 40, 'D');
+            // draw connection lines
+            ctx.strokeStyle = '#3a5a7a';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx - r * 0.7, cy + 20);
+            ctx.lineTo(cx - r * 0.7, cy + 40);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + r * 0.7, cy + 20);
+            ctx.lineTo(cx + r * 0.7, cy + 40);
+            ctx.stroke();
+
+            // power formula
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '13px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('P = I² Rₗ', cx, cy + 80);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('Max when Rₗ = Rₛ', cx, cy + 100);
+        }
+
+        function simMaxPower(p) {
+            const Vs = p.Vs || 10,
+                Rs = p.Rs || 100,
+                Rl = p.Rl || 50;
+            const I = Vs / (Rs + Rl);
+            const Vload = I * Rl;
+            const Pload = I * I * Rl;
+            const eff = (Pload / (Vs * I)) * 100;
+            return {
+                Vload: Vload,
+                Iload: I * 1000,
+                Pload: Pload * 1000,
+                eff: eff,
+                status: `Rₛ=${Rs}Ω, Rₗ=${Rl}Ω → Pₗ=${(Pload*1000).toFixed(1)}mW ${Math.abs(Rl-Rs)<5?'★ MAX!':''}`
+            };
+        }
+
+        // ── 2. Thevenin ──
+        function drawThevenin(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Thevenin Equivalent Circuit', cx, 40);
+            // draw network
+            drawSource(ctx, cx - 100, cy, 30, p.Vs || 15);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Vₛ', cx - 100, cy - 40);
+            drawResistor(ctx, cx - 60, cy - 20, 40, 14, 'R₁', '#6a8aaa');
+            drawResistor(ctx, cx - 10, cy - 20, 40, 14, 'R₂', '#6a8aaa');
+            drawResistor(ctx, cx + 60, cy - 20, 40, 14, 'Rₗ', '#f0b86a');
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '12px monospace';
+            ctx.fillText('Vₜₕ = Vₛ·R₂/(R₁+R₂)', cx, cy + 70);
+            ctx.fillText('Rₜₕ = R₁||R₂', cx, cy + 90);
+            // terminals
+            addTerminal(cx - 100, cy + 40, 'a');
+            addTerminal(cx + 100, cy + 40, 'b');
+        }
+
+        function simThevenin(p) {
+            const Vs = p.Vs || 15,
+                R1 = p.R1 || 100,
+                R2 = p.R2 || 150,
+                Rl = p.Rl || 100;
+            const Vth = Vs * R2 / (R1 + R2);
+            const Rth = (R1 * R2) / (R1 + R2);
+            const Iload = Vth / (Rth + Rl);
+            const Vload = Iload * Rl;
+            return {
+                Vth: Vth,
+                Rth: Rth,
+                Vload: Vload,
+                Iload: Iload * 1000,
+                status: `Vₜₕ=${Vth.toFixed(2)}V, Rₜₕ=${Rth.toFixed(1)}Ω`
+            };
+        }
+
+        // ── 3. Three Voltmeter Method ──
+        function drawThreeVoltmeter(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Three Voltmeter Method', cx, 30);
+            // draw R, L, C in series
+            drawResistor(ctx, cx - 100, cy - 10, 50, 16, 'R', '#6a8aaa');
+            drawInductor(ctx, cx - 20, cy - 10, 50, 20, 'L');
+            drawCapacitor(ctx, cx + 60, cy - 10, 40, 20, 'C');
+            // voltmeter labels
+            ctx.fillStyle = '#4a8cf7';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('V₁', cx - 100, cy + 50);
+            ctx.fillText('V₂', cx - 20, cy + 50);
+            ctx.fillText('V₃', cx + 60, cy + 50);
+            // source
+            drawSource(ctx, cx - 160, cy, 24, p.V || 220);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Vₛ', cx - 160, cy - 34);
+            terminals.push({ x: cx - 130, y: cy - 30, label: 'in', connected: false });
+            terminals.push({ x: cx + 100, y: cy - 30, label: 'out', connected: false });
+        }
+
+        function simThreeVoltmeter(p) {
+            const V = p.V || 220,
+                R = p.R || 100,
+                L = p.L || 200,
+                C = p.C || 30;
+            const w = 2 * Math.PI * 50;
+            const XL = w * L * 1e-3;
+            const XC = 1 / (w * C * 1e-6);
+            const Z = Math.sqrt(R * R + (XL - XC) ** 2);
+            const I = V / Z;
+            const VR = I * R;
+            const VL = I * XL;
+            const VC = I * XC;
+            const PF = R / Z;
+            return {
+                V1: VR,
+                V2: VL,
+                V3: VC,
+                PF: PF,
+                status: `PF = ${PF.toFixed(3)}  |  Z = ${Z.toFixed(1)}Ω`
+            };
+        }
+
+        // ── 4. Star-Delta ──
+        function drawStarDelta(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            const mode = p.mode || 'Star';
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${mode} Connection`, cx, 30);
+            const r = Math.min(W, H) * 0.25;
+            // 3-phase symbols
+            for (let i = 0; i < 3; i++) {
+                const ang = -Math.PI / 2 + i * 2 * Math.PI / 3;
+                const x = cx + r * Math.cos(ang);
+                const y = cy + r * Math.sin(ang);
+                ctx.beginPath();
+                ctx.arc(x, y, 16, 0, Math.PI * 2);
+                ctx.strokeStyle = '#4a7a9a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = '#6a8aaa';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(`Z${i+1}`, x, y + 4);
+                // terminals
+                const tx = cx + (r + 30) * Math.cos(ang);
+                const ty = cy + (r + 30) * Math.sin(ang);
+                addTerminal(tx, ty, `L${i+1}`);
+            }
+            if (mode === 'Star') {
+                ctx.fillStyle = '#f0b86a';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('N', cx, cy + 28);
+                addTerminal(cx, cy + 20, 'N');
+            }
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '12px monospace';
+            const rel = mode === 'Star' ? 'Vₗ=√3·Vₚ, Iₗ=Iₚ' : 'Vₗ=Vₚ, Iₗ=√3·Iₚ';
+            ctx.fillText(rel, cx, cy + r + 50);
+        }
+
+        function simStarDelta(p) {
+            const Vl = p.Vl || 400,
+                Z = p.Z || 100,
+                mode = p.mode || 'Star';
+            let Vp, Ip, Il, S;
+            if (mode === 'Star') {
+                Vp = Vl / Math.sqrt(3);
+                Ip = Vp / Z;
+                Il = Ip;
+            } else {
+                Vp = Vl;
+                Ip = Vp / Z;
+                Il = Ip * Math.sqrt(3);
+            }
+            S = 3 * Vp * Ip;
+            return {
+                Vp: Vp,
+                Ip: Ip,
+                Il: Il,
+                S: S,
+                status: `${mode}: Vₚ=${Vp.toFixed(1)}V, Iₚ=${Ip.toFixed(2)}A, Iₗ=${Il.toFixed(2)}A`
+            };
+        }
+
+        // ── 5. RLC Resonance ──
+        function drawRLC(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('R-L-C Series Circuit', cx, 30);
+            drawResistor(ctx, cx - 110, cy - 10, 50, 16, 'R', '#6a8aaa');
+            drawInductor(ctx, cx - 30, cy - 10, 50, 20, 'L');
+            drawCapacitor(ctx, cx + 50, cy - 10, 40, 20, 'C');
+            drawSource(ctx, cx - 170, cy, 24, p.Vs || 20);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Vₛ', cx - 170, cy - 34);
+            terminals.push({ x: cx - 145, y: cy - 30, label: 'in', connected: false });
+            terminals.push({ x: cx + 100, y: cy - 30, label: 'out', connected: false });
+            // resonance condition
+            const L = p.L || 100,
+                C = p.C || 20;
+            const f0 = 1 / (2 * Math.PI * Math.sqrt(L * 1e-3 * C * 1e-6));
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '12px monospace';
+            ctx.fillText(`f₀ = 1/(2π√LC) = ${f0.toFixed(1)} Hz`, cx, cy + 60);
+        }
+
+        function simRLC(p) {
+            const Vs = p.Vs || 20,
+                R = p.R || 50,
+                L = p.L || 100,
+                C = p.C || 20,
+                f = p.f || 500;
+            const w = 2 * Math.PI * f;
+            const XL = w * L * 1e-3;
+            const XC = 1 / (w * C * 1e-6);
+            const Z = Math.sqrt(R * R + (XL - XC) ** 2);
+            const I = Vs / Z;
+            const f0 = 1 / (2 * Math.PI * Math.sqrt(L * 1e-3 * C * 1e-6));
+            return {
+                XL: XL,
+                XC: XC,
+                Z: Z,
+                I: I * 1000,
+                f0: f0,
+                status: `f=${f}Hz  |  Xₗ=${XL.toFixed(1)}Ω  X꜀=${XC.toFixed(1)}Ω  ${Math.abs(XL-XC)<1?'★ RESONANCE!':''}`
+            };
+        }
+
+        // ── 6. Staircase Wiring ──
+        function drawStaircase(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Staircase Wiring (2-Way)', cx, 30);
+            // two switches
+            const s1 = p.sw1 || 'up',
+                s2 = p.sw2 || 'up';
+            drawSwitch(ctx, cx - 80, cy - 30, 36, 18, s1 === 'up' ? '▲' : '▼', 'S1');
+            drawSwitch(ctx, cx + 80, cy - 30, 36, 18, s2 === 'up' ? '▲' : '▼', 'S2');
+            // lamp
+            drawLamp(ctx, cx, cy + 40, 28);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Lamp', cx, cy + 80);
+            // wires
+            const state = (s1 === 'up' && s2 === 'up') || (s1 === 'down' && s2 === 'down');
+            ctx.strokeStyle = state ? '#5cdb8a' : '#3a4a5a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 80, cy - 30 + 18);
+            ctx.lineTo(cx - 80, cy + 10);
+            ctx.lineTo(cx, cy + 10);
+            ctx.lineTo(cx, cy + 40 - 28);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + 80, cy - 30 + 18);
+            ctx.lineTo(cx + 80, cy + 10);
+            ctx.lineTo(cx, cy + 10);
+            ctx.stroke();
+            // source
+            drawSource(ctx, cx - 80, cy - 70, 18, 230);
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '11px monospace';
+            ctx.fillText(state ? '💡 ON' : '💡 OFF', cx, cy + 110);
+            terminals.push({ x: cx - 80, y: cy - 70 + 18, label: 'L', connected: false });
+            terminals.push({ x: cx + 80, y: cy - 30 - 18, label: 'N', connected: false });
+        }
+
+        function simStaircase(p) {
+            const s1 = p.sw1 || 'up',
+                s2 = p.sw2 || 'up';
+            const on = (s1 === 'up' && s2 === 'up') || (s1 === 'down' && s2 === 'down');
+            return {
+                lamp: on ? '💡 ON' : '💡 OFF',
+                state: on ? 'ON' : 'OFF',
+                status: on ? 'Lamp is ON 🔆' : 'Lamp is OFF ⚫'
+            };
+        }
+
+        // ── 7. Bed Switch Wiring ──
+        function drawBedSwitch(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Bed Switch Wiring (1-Way)', cx, 30);
+            const s1 = p.sw1 || 'off',
+                s2 = p.sw2 || 'off';
+            drawSwitch(ctx, cx - 80, cy - 20, 36, 18, s1 === 'on' ? 'ON' : 'OFF', 'S1');
+            drawSwitch(ctx, cx + 80, cy - 20, 36, 18, s2 === 'on' ? 'ON' : 'OFF', 'S2');
+            drawLamp(ctx, cx, cy + 40, 28);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Lamp', cx, cy + 80);
+            const on = s1 === 'on' && s2 === 'on';
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '11px monospace';
+            ctx.fillText(on ? '💡 ON' : '💡 OFF', cx, cy + 110);
+            terminals.push({ x: cx - 80, y: cy - 20 + 18, label: 'L', connected: false });
+            terminals.push({ x: cx + 80, y: cy - 20 - 18, label: 'N', connected: false });
+        }
+
+        function simBedSwitch(p) {
+            const s1 = p.sw1 || 'off',
+                s2 = p.sw2 || 'off';
+            const on = s1 === 'on' && s2 === 'on';
+            return {
+                lamp: on ? '💡 ON' : '💡 OFF',
+                state: on ? 'ON' : 'OFF',
+                status: on ? 'Both switches ON → Lamp ON' : 'One or both switches OFF → Lamp OFF'
+            };
+        }
+
+        // ── 8. Two-Wattmeter ──
+        function drawTwoWattmeter(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Two-Wattmeter Method (3-Phase)', cx, 30);
+            // draw 3-phase source
+            for (let i = 0; i < 3; i++) {
+                const ang = -Math.PI / 2 + i * 2 * Math.PI / 3;
+                const x = cx + 100 * Math.cos(ang);
+                const y = cy + 100 * Math.sin(ang);
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#4a7a9a';
+                ctx.fill();
+                ctx.fillStyle = '#6a8aaa';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(`L${i+1}`, x, y + 20);
+                addTerminal(x, y, `L${i+1}`);
+            }
+            // wattmeters
+            ctx.fillStyle = '#f0b86a';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('W₁', cx - 40, cy - 60);
+            ctx.fillText('W₂', cx + 40, cy - 60);
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '12px monospace';
+            ctx.fillText('P = W₁ + W₂', cx, cy + 90);
+            terminals.push({ x: cx, y: cy - 40, label: 'N', connected: false });
+        }
+
+        function simTwoWattmeter(p) {
+            const Vl = p.Vl || 415,
+                Z = p.Z || 100,
+                pf = p.pf || 0.8;
+            const Vp = Vl / Math.sqrt(3);
+            const Ip = Vp / Z;
+            const Il = Ip;
+            const phi = Math.acos(pf);
+            const W1 = Vl * Il * Math.cos(phi + Math.PI / 6);
+            const W2 = Vl * Il * Math.cos(phi - Math.PI / 6);
+            const Pt = W1 + W2;
+            return {
+                W1: W1,
+                W2: W2,
+                Pt: Pt,
+                PF: pf,
+                status: `W₁=${W1.toFixed(1)}W, W₂=${W2.toFixed(1)}W, P=${Pt.toFixed(1)}W`
+            };
+        }
+
+        // ── 9. DSO ──
+        function drawDSO(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Digital Storage Oscilloscope', cx, 30);
+            // draw grid
+            const w = Math.min(W, H) * 0.6;
+            const h = w * 0.5;
+            const ox = (W - w) / 2,
+                oy = (H - h) / 2 + 10;
+            ctx.strokeStyle = '#1a2a40';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(ox, oy, w, h);
+            for (let x = 0; x <= 10; x++) {
+                ctx.beginPath();
+                ctx.moveTo(ox + x * w / 10, oy);
+                ctx.lineTo(ox + x * w / 10, oy + h);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= 6; y++) {
+                ctx.beginPath();
+                ctx.moveTo(ox, oy + y * h / 6);
+                ctx.lineTo(ox + w, oy + y * h / 6);
+                ctx.stroke();
+            }
+            // draw waveform
+            const freq = p.freq || 100,
+                amp = p.amp || 10,
+                phase = p.phase || 45,
+                wave = p.wave || 'Sine';
+            ctx.strokeStyle = '#4cdb8a';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            const pts = 200;
+            const phaseRad = phase * Math.PI / 180;
+            for (let i = 0; i <= pts; i++) {
+                const t = i / pts;
+                const x = ox + t * w;
+                let y;
+                const ang = 2 * Math.PI * t + phaseRad;
+                if (wave === 'Sine') y = Math.sin(ang);
+                else if (wave === 'Square') y = Math.sin(ang) >= 0 ? 1 : -1;
+                else y = 2 * (Math.abs((ang / Math.PI) % 2 - 1) - 0.5);
+                const yy = oy + h / 2 - y * (h / 2.5);
+                if (i === 0) ctx.moveTo(x, yy);
+                else ctx.lineTo(x, yy);
+            }
+            ctx.stroke();
+            // second waveform (phase shifted)
+            ctx.strokeStyle = '#f0b86a';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            const phase2 = (phase + 90) * Math.PI / 180;
+            for (let i = 0; i <= pts; i++) {
+                const t = i / pts;
+                const x = ox + t * w;
+                let y;
+                const ang = 2 * Math.PI * t + phase2;
+                if (wave === 'Sine') y = Math.sin(ang);
+                else if (wave === 'Square') y = Math.sin(ang) >= 0 ? 1 : -1;
+                else y = 2 * (Math.abs((ang / Math.PI) % 2 - 1) - 0.5);
+                const yy = oy + h / 2 - y * (h / 2.5);
+                if (i === 0) ctx.moveTo(x, yy);
+                else ctx.lineTo(x, yy);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            // labels
+            ctx.fillStyle = '#4a6a8a';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('CH1', ox + 4, oy + 14);
+            ctx.fillStyle = '#f0b86a';
+            ctx.fillText('CH2', ox + 4, oy + 28);
+            ctx.fillStyle = '#4a6a8a';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${freq} Hz`, ox + w - 4, oy + 14);
+            ctx.fillStyle = '#b0c8e0';
+            ctx.textAlign = 'center';
+            ctx.font = '11px monospace';
+            ctx.fillText(`Vₚₚ=${(amp*2).toFixed(1)}V  Vᵣₘₛ=${(amp/Math.sqrt(2)).toFixed(2)}V  φ=${phase}°`, cx, oy + h + 30);
+            terminals.push({ x: ox + 20, y: oy + h + 10, label: 'CH1', connected: false });
+            terminals.push({ x: ox + w - 20, y: oy + h + 10, label: 'CH2', connected: false });
+        }
+
+        function simDSO(p) {
+            const freq = p.freq || 100,
+                amp = p.amp || 10,
+                phase = p.phase || 45;
+            const Vpp = amp * 2;
+            const Vrms = amp / Math.sqrt(2);
+            return {
+                Vpp: Vpp,
+                Vrms: Vrms,
+                freq_m: freq,
+                phase_m: phase,
+                status: `f=${freq}Hz, Vₚₚ=${Vpp.toFixed(1)}V, Vᵣₘₛ=${Vrms.toFixed(2)}V`
+            };
+        }
+
+        // ── 10. Electric Field ──
+        function drawEField(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            const gap = Math.min(W, H) * 0.35;
+            const V = p.V || 100,
+                d = p.d || 5;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Electric Field: Parallel Plates', cx, 30);
+            // plates
+            const w = gap * 1.6,
+                h = 14;
+            ctx.fillStyle = '#4a6a8a';
+            ctx.fillRect(cx - w / 2, cy - gap / 2 - h / 2, w, h);
+            ctx.fillRect(cx - w / 2, cy + gap / 2 - h / 2, w, h);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('+', cx - w / 2 + 16, cy - gap / 2 + 4);
+            ctx.fillText('−', cx - w / 2 + 16, cy + gap / 2 + 4);
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '11px monospace';
+            ctx.fillText(`V = ${V}V   d = ${d}cm`, cx, cy + gap / 2 + 40);
+            // field lines
+            const E = V / (d * 0.01);
+            ctx.strokeStyle = '#4cdb8a40';
+            ctx.lineWidth = 1.5;
+            for (let i = -4; i <= 4; i++) {
+                const x = cx + i * w / 12;
+                ctx.beginPath();
+                ctx.moveTo(x, cy - gap / 2 + 10);
+                for (let y = cy - gap / 2 + 10; y < cy + gap / 2 - 10; y += 3) {
+                    ctx.lineTo(x + (Math.random() - 0.5) * 2, y);
+                }
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#4cdb8a';
+            ctx.font = '11px sans-serif';
+            ctx.fillText(`E = ${E.toFixed(1)} V/m`, cx, cy + gap / 2 + 60);
+            terminals.push({ x: cx - w / 2 + 30, y: cy - gap / 2, label: '+', connected: false });
+            terminals.push({ x: cx - w / 2 + 30, y: cy + gap / 2, label: '−', connected: false });
+        }
+
+        function simEField(p) {
+            const V = p.V || 100,
+                d = p.d || 5;
+            const E = V / (d * 0.01);
+            return {
+                E: E,
+                Vgrad: E,
+                status: `E = ${E.toFixed(1)} V/m  (uniform field)`
+            };
+        }
+
+        // ── 11. Magnetic Field ──
+        function drawBField(ctx, W, H, p) {
+            const cx = W / 2,
+                cy = H / 2;
+            const I = p.I || 5,
+                r = p.r || 2;
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Magnetic Field: Current-Carrying Wire', cx, 30);
+            // wire (circle in cross-section)
+            const wireR = 20;
+            ctx.beginPath();
+            ctx.arc(cx, cy, wireR, 0, Math.PI * 2);
+            ctx.fillStyle = '#4a6a8a';
+            ctx.fill();
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '16px sans-serif';
+            ctx.fillText('I', cx, cy + 6);
+            // field rings
+            const B = (4 * Math.PI * 1e-7 * I) / (2 * Math.PI * r * 0.01);
+            for (let radius = 40; radius < Math.min(W, H) * 0.4; radius += 30) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = radius < 50 ? '#4cdb8a' : '#4cdb8a60';
+                ctx.lineWidth = radius < 50 ? 2 : 1;
+                ctx.setLineDash(radius < 50 ? [] : [4, 6]);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            // arrows on rings
+            for (let radius = 50; radius < Math.min(W, H) * 0.4; radius += 30) {
+                for (let a = 0; a < 2 * Math.PI; a += Math.PI / 4) {
+                    const ax = cx + radius * Math.cos(a);
+                    const ay = cy + radius * Math.sin(a);
+                    const ang = a + Math.PI / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    ctx.lineTo(ax + 8 * Math.cos(ang), ay + 8 * Math.sin(ang));
+                    ctx.strokeStyle = '#4cdb8a80';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '11px monospace';
+            const Bval = (4 * Math.PI * 1e-7 * I) / (2 * Math.PI * r * 0.01);
+            ctx.fillText(`B = μ₀I/(2πr) = ${(Bval*1e6).toFixed(2)} µT`, cx, cy + Math.min(W, H) * 0.45 + 20);
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText(`I = ${I}A   r = ${r}cm`, cx, cy + Math.min(W, H) * 0.45 + 44);
+            terminals.push({ x: cx - 50, y: cy + 30, label: 'I', connected: false });
+            terminals.push({ x: cx + 50, y: cy - 30, label: 'B', connected: false });
+        }
+
+        function simBField(p) {
+            const I = p.I || 5,
+                r = p.r || 2;
+            const B = (4 * Math.PI * 1e-7 * I) / (2 * Math.PI * r * 0.01);
+            const Bsurface = (4 * Math.PI * 1e-7 * I) / (2 * Math.PI * 0.005);
+            return {
+                B: B * 1e6,
+                B0: Bsurface * 1e6,
+                status: `B = ${(B*1e6).toFixed(2)} µT at r=${r}cm`
+            };
+        }
+
+        // ── DRAWING PRIMITIVES ──
+
+        function drawSource(ctx, x, y, size, V) {
+            ctx.beginPath();
+            ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = '#4a7a9a';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#4a7a9a';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(V ? `${V}V` : 'V', x, y + 4);
+        }
+
+        function drawResistor(ctx, x, y, w, h, label, color) {
+            const segs = 8;
+            const segW = w / segs;
+            ctx.beginPath();
+            ctx.moveTo(x - w / 2, y);
+            for (let i = 0; i < segs; i++) {
+                const xx = x - w / 2 + i * segW + segW / 2;
+                const yy = y + (i % 2 === 0 ? -h / 2 : h / 2);
+                if (i === 0) ctx.lineTo(xx, yy);
+                else ctx.lineTo(xx, yy);
+            }
+            ctx.lineTo(x + w / 2, y);
+            ctx.strokeStyle = color || '#6a8aaa';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = color || '#6a8aaa';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(label || 'R', x, y + h / 2 + 16);
+        }
+
+        function drawInductor(ctx, x, y, w, h, label) {
+            const turns = 6;
+            const tw = w / turns;
+            ctx.beginPath();
+            for (let i = 0; i < turns; i++) {
+                const xx = x - w / 2 + i * tw + tw / 2;
+                const yy = y + (i % 2 === 0 ? -h / 2 : h / 2);
+                if (i === 0) ctx.moveTo(xx, yy);
+                else ctx.lineTo(xx, yy);
+            }
+            ctx.strokeStyle = '#6a8aaa';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(label || 'L', x, y + h / 2 + 16);
+        }
+
+        function drawCapacitor(ctx, x, y, w, h, label) {
+            const gap = 6;
+            ctx.beginPath();
+            ctx.moveTo(x - w / 2, y - h / 2);
+            ctx.lineTo(x - w / 2, y + h / 2);
+            ctx.moveTo(x + w / 2, y - h / 2);
+            ctx.lineTo(x + w / 2, y + h / 2);
+            ctx.strokeStyle = '#6a8aaa';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#6a8aaa';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(label || 'C', x, y + h / 2 + 16);
+        }
+
+        function drawSwitch(ctx, x, y, w, h, state, label) {
+            ctx.fillStyle = '#1a2535';
+            ctx.strokeStyle = '#4a6a8a';
+            ctx.lineWidth = 2;
+            ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, 4) : ctx.rect(x - w / 2, y - h / 2, w, h);
+            ctx.stroke();
+            ctx.fillStyle = state === 'ON' || state === '▲' || state === '▼' ? '#2a4a6a' : '#0d1520';
+            ctx.fill();
+            ctx.fillStyle = '#b0c8e0';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(state, x, y + 4);
+            ctx.fillStyle = '#4a6a8a';
+            ctx.font = '9px sans-serif';
+            ctx.fillText(label || '', x, y + h / 2 + 14);
+        }
+
+        function drawLamp(ctx, x, y, size) {
+            ctx.beginPath();
+            ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = '#f0b86a';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#f0b86a30';
+            ctx.fill();
+            ctx.fillStyle = '#f0b86a';
+            ctx.font = '18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('💡', x, y + 6);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  START
+        // ──────────────────────────────────────────────────────────────
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
